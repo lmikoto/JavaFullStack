@@ -14,7 +14,22 @@
 启动es
 
 ```java
+package io.github.lmikoto;
 
+import org.junit.Before;
+import org.junit.Test;
+import org.testcontainers.elasticsearch.ElasticsearchContainer;
+
+public class ESTest {
+
+    private ElasticsearchContainer container;
+
+    @Before
+    public void startES(){
+        container = new ElasticsearchContainer("docker.elastic.co/elasticsearch/elasticsearch:7.3.0");
+        container.start();
+    }
+}
 
 ```
 
