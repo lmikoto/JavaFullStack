@@ -32,7 +32,6 @@ services:
     volumes:
       - './docker/db/data:/var/lib/mysql'
       - './docker/db/my.cnf:/etc/mysql/conf.d/my.cnf'
-      - './docker/db/sql:/docker-entrypoint-initdb.d'
 ```
 
 
