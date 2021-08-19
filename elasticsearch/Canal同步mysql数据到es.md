@@ -105,7 +105,7 @@ wget https://raw.githubusercontent.com/alibaba/canal/master/docker/run_admin.sh
 
 
 
-
+执行canal_manager.sql初始化canal-admin的数据表
 
 ## 完整代码
 
