@@ -148,11 +148,19 @@ wget https://raw.githubusercontent.com/alibaba/canal/master/docker/run.sh
 ```
 sh run.sh -e canal.admin.manager=docker.for.mac.host.internal:8089 \
          -e canal.admin.port=11110 \
-         -e canal.port=11121 \
+         -e canal.port=11111 \
          -e canal.metrics.pull.port=11122 \
          -e canal.admin.user=admin \
          -e canal.admin.passwd=6BB4837EB74329105EE4568DDA7DC67ED2CA2AD9
 ```
+
+
+
+canal启动成功之后登陆canal-admin创建一个example的instance一会会用到
+
+一个instance对应一个mysql实例
+
+![9AC60839-3114-4B78-8413-760C913D53CB](../../images/9AC60839-3114-4B78-8413-760C913D53CB.png)
 
 ### canal-adapter
 
@@ -163,17 +171,161 @@ Dockerfile
 ```dockerfile
 FROM openjdk:8-jre-alpine
 RUN echo "Asia/Shanghai" > /etc/timezone
-ADD https://github.com/alibaba/canal/releases/download/canal-1.1.5/canal.adapter-1.1.5.tar.gz /opt/canal/adapter/
+ADD canal.adapter-1.1.5.tar.gz /opt/canal/adapter/
+
 WORKDIR /opt/canal/adapter
-COPY conf /opt/canal/adapter/conf/
-ENTRYPOINT ["sh", "-c", "sh /opt/canal/adapter/bin/startup.sh && tail -F logs/adapter/adapter.log"]
+
+ENTRYPOINT ["sh", "-c", "sh bin/startup.sh && tail -F logs/adapter/adapter.log"]
+```
+
+这里不从官方直接下载1.1.5的包。而是自己打一个，因为官方的1.1.5的包有问题，直到写这篇文章的时候还没解决。如果你正在参考这边文章，可以使用我打好的。或者参照https://github.com/alibaba/canal/issues/3144自己打一个
+
+docker-compose.yml
+
+```
+version: '3'
+services:
+  adapter:
+    build: .
+    volumes:
+      - "./conf:/opt/canal/adapter/conf"
+```
+
+修改配置文件
+
+```
+server:
+  port: 8081
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: GMT+8
+    default-property-inclusion: non_null
+
+canal.conf:
+  mode: tcp #tcp kafka rocketMQ rabbitMQ
+  flatMessage: true
+  zookeeperHosts:
+  syncBatchSize: 1000
+  retries: 0
+  timeout:
+  accessKey:
+  secretKey:
+  consumerProperties:
+    # canal tcp consumer
+    canal.tcp.server.host: docker.for.mac.host.internal:11111
+    canal.tcp.zookeeper.hosts:
+    canal.tcp.batch.size: 500
+    canal.tcp.username:
+    canal.tcp.password:
+
+  srcDataSources:
+    defaultDS:
+      url: jdbc:mysql://docker.for.mac.host.internal:3306/test?useUnicode=true
+      username: canal
+      password: canal
+  canalAdapters:
+  - instance: example # canal instance Name or mq topic name
+    groups:
+    - groupId: g1
+      outerAdapters:
+        - name: logger
+        - name: es7
+          hosts: docker.for.mac.host.internal:9200 # 127.0.0.1:9200 for rest mode
+          properties:
+            mode: rest
+            cluster.name: elasticsearch
 ```
 
 
 
-当然也可以直接用我做好的
+启动canal-adapter
+
+```bash
+docker-compose up -d
+```
+
+
 
 ## 数据同步
+
+创建需要同步的表
+
+```sql
+CREATE TABLE `product` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `title` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `sub_title` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  `price` decimal(10,2) DEFAULT NULL,
+  `pic` varchar(255) CHARACTER SET utf8 COLLATE utf8_general_ci DEFAULT NULL,
+  PRIMARY KEY (`id`) USING BTREE
+) ENGINE=InnoDB;
+```
+
+使用kibana创建索引
+
+```
+PUT product
+{
+  "mappings": {
+    "properties": {
+      "title": {
+        "type": "text"
+      },
+      "sub_title": {
+        "type": "text"
+      },
+      "pic": {
+        "type": "text"
+      },
+      "price": {
+        "type": "double"
+      }
+    }
+  }
+}
+```
+
+修改`es7/product.yml`
+
+```
+dataSourceKey: defaultDS
+destination: example
+groupId: g1
+esMapping:
+  _index: product
+  _id: _id 
+  sql: "SELECT
+         p.id AS _id,
+         p.title,
+         p.sub_title,
+         p.price,
+         p.pic
+        FROM
+         product p"
+  etlCondition: "1=1"
+  commitBatch: 3000
+```
+
+重启canal-adapter
+
+
+
+使用mysql插入一条数据
+
+```
+INSERT INTO product ( id, title, sub_title, price, pic ) VALUES ( 1, 'iphone12', 'iphone', 6999.00, NULL );
+```
+
+查询es
+
+```
+GET product/_search
+```
+
+查询结果，可以看到已经同步成功了
+
+![E03D541D-6156-45B0-836D-BB5F6211C905](../../images/E03D541D-6156-45B0-836D-BB5F6211C905.png)
 
 
 
