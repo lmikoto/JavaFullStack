@@ -332,12 +332,3 @@ GET product/_search
 ## 完整代码
 
 https://github.com/lmikoto/mysql-to-es-demo
-
-
-
-
-
-
-
-
-
