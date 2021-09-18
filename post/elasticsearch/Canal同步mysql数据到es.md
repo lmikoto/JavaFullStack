@@ -125,7 +125,7 @@ sh run_admin.sh -e server.port=8089 \
 
 访问`http://localhost:8089/` 密码是admin/123456
 
-![image-20210820192251812](../../images/image-20210820192251812.png)
+![image-20210820192251812](https://lmikoto-image.oss-cn-hangzhou.aliyuncs.com/image-20210820192251812.png)
 
 ### canal
 
@@ -160,7 +160,7 @@ canal启动成功之后登陆canal-admin创建一个example的instance一会会�
 
 一个instance对应一个mysql实例
 
-![9AC60839-3114-4B78-8413-760C913D53CB](../../images/9AC60839-3114-4B78-8413-760C913D53CB.png)
+![9AC60839-3114-4B78-8413-760C913D53CB](https://lmikoto-image.oss-cn-hangzhou.aliyuncs.com/9AC60839-3114-4B78-8413-760C913D53CB.png)
 
 ### canal-adapter
 
@@ -325,7 +325,7 @@ GET product/_search
 
 查询结果，可以看到已经同步成功了
 
-![E03D541D-6156-45B0-836D-BB5F6211C905](../../images/E03D541D-6156-45B0-836D-BB5F6211C905.png)
+![E03D541D-6156-45B0-836D-BB5F6211C905](https://lmikoto-image.oss-cn-hangzhou.aliyuncs.com/E03D541D-6156-45B0-836D-BB5F6211C905.png)
 
 
 
